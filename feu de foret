@@ -1,0 +1,131 @@
+%{
+--------------------------------------------------------------------------------------------------
+ PIRLOT
+ Marie-Alix
+ 16/12/2022
+--------------------------------------------------------------------------------------------------
+%}
+
+% On ferme toutes les fenêtres et on supprime toutes les variables générées précédemment
+close all
+clear variable
+clc
+
+disp('Au feu!');
+
+N=input('taille du plateau:');
+
+%{
+On crée une matrice carrée de zéros de taille NxN qui servira à attribuer les valeurs 2 puis 3 aux
+arbres de la matrice "trees". En effet, la matrice suivante ("trees") est une matrice de 0 et de 1
+générés aléatoirement. Cette matrice ne peut donc pas contenir de 2. Pour contrer cela, on crée
+une matrice de 0 ("fields") dans laquelle on modifiera directement les valeurs de 0 en 2 ou 3.
+%}
+fields=zeros(N);
+
+% On crée une matrice carrée de taille NxN contenant des zéros (0) et des uns (1) générés
+% aléatoirement. La quantité de 1 générés dépend de la densité choisie.
+density=input('entrer le choix de la densité:');
+trees=rand(N)>density;
+
+% On superpose la matrice contenant des 1 et celle ne contenant que des 0 (pour le moment). Cette
+% superposition permet d'attribuer les futures nouvelles valeurs de "fields" à "trees".
+trees=trees+fields;
+
+%{
+On va créer une boucle 𝙬𝙝𝙞𝙡𝙚 qui va nous permettre de trouver l'arbre d'où va partir le feu.
+Pour cela, on doit trouver une coordonnée de la matrice à laquelle correspond la valeur a=1
+(un arbre). La boucle va donc tourner tant qu'elle tombe sur a=0 jusqu'à trouver un a=1.
+%}
+a=0;
+while a==0
+%{
+Pour la suite, on a besoin de générer deux nombres aléatoires qu'on utilisera pour déterminer
+aléatoirement les coordonneés du 1er arbre en feu. Les arbres en feu vont correspondre à la valeur 2.
+𝙧𝙖𝙣𝙙 ne génère des valeurs comprises qu'entre 0 et 1. On va donc utiliser 𝙧𝙖𝙣𝙙𝙞 pour générer deux
+nombres aléatoires (i et j) compris entre 2 et N-1 (en l'ocurrence, N-1 = 49).
+%}
+i=randi([2,N-1]);
+j=randi([2,N-1]);
+%{
+On regarde la valeur de a en coordonnées (i,j). Lorsqu'on tombe sur a=1, on va changer sa valeur
+en a=2 (arbre en feu).
+%}
+a=trees(i,j);
+    if a==1
+    trees(i,j)=2;
+    end
+end
+
+%{
+Une nouvelle boucle 𝙬𝙝𝙞𝙡𝙚 va nous permettre de propager le feu ainsi que de changer les arbres
+"en feu" en arbres "brulés".
+Pour ce faire, on va créer une matrice "treesv2" identique à "trees" qui nous servira à mettre à
+jour les valeurs de notre matrice.
+%}
+t=true;
+treesv2=trees;
+while t
+%{
+On va utiliser les coordonnées (c,d) pour naviguer dans notre matrice "trees". c et d vont balayer
+toute la matrice jusqu'à trouver notre 1er arbre en feu. Une fois sa position (coordonnées) trouvée,
+sa valeur 2 correspondante (dans "trees") va être définie comme étant 3 à cette même position 
+dans "treesv2".
+Ensuite, on va regarder les quatre cellules autour de cette position. Si ce sont des arbres 
+(valeur 1), ils prendront feu. Sinon, les cellules resteront des prairies (valeur 0). Ici le
+mécanisme est le même que précédemment : c'est dans "trees" que l'on cherche les arbres (valeur 1),
+et dans "treesv2" que l'on définit la nouvelle valeur "en feu" (2).
+À chaque fois que les valeurs autour d'un arbre tout juste brulé sont mises à jour, les valeurs de
+"treesv2" sont apliquées à "trees", et on recommence jusqu'à ce que les matrices soient les mêmes
+(plus d'arbres à brûler).
+%}
+for c=2:N-1
+    for d=2:N-1
+        if trees(c,d)==2
+            treesv2(c,d)=3;
+            if trees(c-1,d)==1
+                treesv2(c-1,d)=2;
+            end
+            if trees(c,d-1)==1
+                treesv2(c,d-1)=2;
+            end
+            if trees(c+1,d)==1
+                treesv2(c+1,d)=2;
+            end
+            if trees(c,d+1)==1
+                treesv2(c,d+1)=2;
+            end
+        end
+    end
+end
+
+if treesv2==trees
+    t=false;
+else 
+   trees=treesv2;
+end
+%{
+"mymap" contient des codes couleur RVB (Rouge, Vert, Bleu) (ou RGB en anglais). Blanc pour les 0,
+vert pour les 1, rouge pour les 2 et noir pour les 3, de la matrice "treesv2".
+𝙞𝙢𝙖𝙜𝙚𝙨𝙘 affiche la figure de la matrice "treesv2".
+C'est 𝙘𝙤𝙡𝙤𝙧𝙢𝙖𝙥 qui va attribuer les codes RVB de "mymap" aux valeurs de "treesv2" et ainsi
+colorer les cellules de la figure en fonction de leur valeur respective.
+𝙙𝙧𝙖𝙬𝙣𝙤𝙬 met à jour la figure en direct (pour qu'on voie l'évulotion du feu en temps réel).
+%}
+mymap = [1 1 1;0 1 0;1 0 0;0 0 0];
+imagesc(treesv2)
+colormap(mymap)
+drawnow
+end
+%{
+Cette dernière "mymap" permet de "corriger" les arbres rouges restants sur les bords de la figure
+en les forçant à se colorer en noir. Pour cela, on vient juste enlever le code RVB de la couleur
+rouge de la "mymap" de la dernière image de la figure de "treesv2" de sorte à ce que les valeurs
+2 prennent la couleur noire (et également les valeurs supérieures à 2 car notre "mymap" ne définit
+pas de couleur pour ces dernières). Ceci est purement esthétique et vient remédier à une limite du
+code.
+%}
+mymap = [1 1 1;0 1 0;0 0 0];
+imagesc(treesv2)
+colormap(mymap)
+drawnow
